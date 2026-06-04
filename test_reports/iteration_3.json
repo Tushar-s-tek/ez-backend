@@ -1,0 +1,39 @@
+{
+  "summary": "Iteration 3 backend regression + escalation-worker verification on refactored modular backend (server.py 105 lines, routers/*.py, core.py, models.py, seed.py). pytest 51/51 PASS (45 iteration-2 regression cases + 2 updated PATCH-preorder cases + 1 settings-mask case + 2 brand-new escalation worker cases). Confirmed via mongo: a request with created_at 5min old and escalation_minutes=1 is flipped to 'escalated' by the worker within ~35s, escalated_at is set, history gains a {by:'system', note:'auto-escalated after Nm', status:'escalated'} entry, and API GET /api/requests reflects the new status. Fresh request with default escalation window stays 'requested' after one worker tick. Backend logs show 'escalation_worker started (interval=30s)' on startup and 'auto-escalated request <id> (age=Xs, limit=Nm)' per escalation as required. Notification dispatch is no-op (empty webhooks) - MOCKED.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PATCH /api/settings", "issue": "PATCH response returns unmasked slack/teams/whatsapp values (returns get_settings() directly), while GET masks them. Minor inconsistency - either both should mask or neither. Currently fine because PATCH echoes what the admin just sent, but it does leak secrets back to whoever can PATCH."},
+      {"endpoint": "GET /api/settings", "issue": "Masking format '••••••••<last4>' is identical for whatsapp_token, slack_webhook_url, teams_webhook_url which all share the same _mask() helper - good, but if a value is <8 chars the mask helper returns it unmasked (potential pitfall for short test values; not a real concern in prod)."},
+      {"endpoint": "escalation_worker", "issue": "Worker swallows ALL exceptions inside the iteration with logger.warning - if dispatch_notification or sio.emit throws, the request IS still flipped (good), but a partial failure won't surface to admins. Consider a failed_dispatches collection (already noted in iteration 2 review)."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_smart_workplace.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Decide whether PATCH /api/settings should return masked secrets like GET does, for consistency.",
+    "(Optional) Consider persisting failed escalation notification dispatches for admin visibility."
+  ],
+  "critical_code_review_comments": [
+    "Excellent refactor: server.py reduced from 1210 -> 105 lines. Routers are cleanly split by domain; lifespan/wiring only in server.py.",
+    "escalation_worker: cursor iterates db.requests inside the same loop body that updates them. Not a bug here (Motor cursor + filter on status not in {requested,accepted,in_progress} after escalation), but if status transitions back into an active state mid-scan it could be re-processed. Acceptable for now.",
+    "escalation_worker uses datetime.fromisoformat(req['created_at']) - if any legacy doc has a non-ISO date this row is silently skipped (continue). Consider logging.debug on skip for observability.",
+    "PREORDER_TRANSITIONS now enforced in routers/cafeteria.py - good improvement; 404 handling added; JSON body model PreOrderStatusUpdate replaces query param - REST consistent with /requests and /visitors.",
+    "settings.py _mask returns value unchanged when len<8 - a value like 'abc' or '' is leaked. Edge case but worth a one-liner fix: return '••••' if value else value.",
+    "core.py contains both Mongo client AND Socket.IO AND auth helpers AND notification dispatcher (~149 lines). Acceptable for now but consider splitting into core/db.py, core/auth.py, core/notify.py once it grows beyond ~250 lines.",
+    "TEST_ prefixed seed leftovers (rooms, departments, categories, visitor, preorder) persist across test runs - tests are idempotent but admin UI gradually accumulates test rows. Consider a cleanup fixture at module teardown."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_smart_workplace.py (1) flipped PATCH preorders/{oid}/status from params= to json= matching new REST body schema, (2) updated settings persistence test to expect masked slack/teams URLs, (3) added TestPreorders.test_preorder_illegal_transition_blocked + test_preorder_404_on_unknown_id, (4) added TestEscalationWorker.test_stale_request_auto_escalated + test_fresh_request_not_escalated using pymongo to insert stale docs"
+  ],
+  "success_rate": {"backend": "100% (51/51)", "frontend": "skipped per request"},
+  "test_credentials": "admin@workplace.com / admin123 (super_admin); reception@workplace.com, cafeteria@workplace.com, it@workplace.com, facilities@workplace.com, security@workplace.com / demo123; Room PIN 123456 (CEO Cabin).",
+  "seed_data_creation": "Seed unchanged from iteration 2 (6 depts, 24 categories, 5 rooms, 6 users, 8 menu items, 1 settings doc). Iteration 3 tests additionally insert/delete ephemeral ESC_TEST_<hex> and ESC_FRESH_<hex> request docs directly via pymongo; both are cleaned up in finally blocks.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "pytest /app/backend/tests/test_smart_workplace.py -v takes ~65s due to escalation tests (35s wait for fresh-not-escalated + up to 75s for stale-escalated). Worker is global - if multiple tests insert stale rows in parallel they would all be flipped within one 30s tick; tests are serial in pytest so safe. New iteration-3 classes: TestEscalationWorker (2 cases). Iteration-3 contract changes vs iteration-2: (a) PATCH /api/preorders/{oid}/status now expects JSON body {status} not query param, (b) GET /api/settings now masks slack_webhook_url and teams_webhook_url in addition to whatsapp_token, (c) /api/preorders has 404 on missing id and status-transition validation enforced.",
+  "rca of the issue": "No bugs blocking iteration 3. Two pre-existing iteration-2 tests had to be updated because iteration 3 intentionally fixed the recommendations from the prior iteration's action items (preorder PATCH body + settings masking). Both are improvements; tests now match the new (more correct) behavior. Escalation worker functions exactly per spec: scans every 30s, flips active requests past their escalation window, sets escalated_at, appends system history entry, emits socket event, dispatches notification (no-op if webhooks empty)."
+}

@@ -1,0 +1,176 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+    --bg: #FFFFFF;
+    --bg-secondary: #F8F9FA;
+    --text-primary: #0A0A0A;
+    --text-secondary: #52525B;
+    --text-muted: #A1A1AA;
+    --brand: #0055FF;
+    --brand-hover: #0044CC;
+    --success: #00B368;
+    --success-bg: #E6F7F0;
+    --warning: #F5A623;
+    --warning-bg: #FEF6E9;
+    --danger: #E53935;
+    --danger-bg: #FCEBEA;
+    --info: #0055FF;
+    --info-bg: #E5EEFF;
+    --border: #E5E7EB;
+}
+
+body {
+    margin: 0;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 200ms ease, color 200ms ease;
+}
+
+html.dark {
+    --bg: #0B0D10;
+    --bg-secondary: #0F1116;
+    --text-primary: #F4F4F5;
+    --text-secondary: #A1A1AA;
+    --text-muted: #71717A;
+    --border: #27272A;
+}
+
+html.dark body {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+html, body, #root {
+    height: 100%;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Outfit', system-ui, sans-serif;
+    letter-spacing: -0.01em;
+}
+
+.font-mono, code {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 0 0% 4%;
+        --card: 0 0% 100%;
+        --card-foreground: 0 0% 4%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 0 0% 4%;
+        --primary: 222 100% 50%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 0 0% 96%;
+        --secondary-foreground: 0 0% 9%;
+        --muted: 0 0% 96%;
+        --muted-foreground: 0 0% 45%;
+        --accent: 222 100% 96%;
+        --accent-foreground: 222 100% 30%;
+        --destructive: 0 78% 56%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 220 13% 91%;
+        --input: 220 13% 91%;
+        --ring: 222 100% 50%;
+        --radius: 0.625rem;
+        --chart-1: 222 100% 50%;
+        --chart-2: 152 100% 35%;
+        --chart-3: 35 92% 55%;
+        --chart-4: 261 73% 58%;
+        --chart-5: 0 78% 56%;
+    }
+    .dark {
+        --background: 220 13% 7%;
+        --foreground: 0 0% 95%;
+        --card: 220 13% 10%;
+        --card-foreground: 0 0% 95%;
+        --popover: 220 13% 10%;
+        --popover-foreground: 0 0% 95%;
+        --primary: 222 100% 60%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 220 13% 14%;
+        --secondary-foreground: 0 0% 95%;
+        --muted: 220 13% 14%;
+        --muted-foreground: 0 0% 60%;
+        --accent: 222 70% 18%;
+        --accent-foreground: 222 100% 80%;
+        --destructive: 0 70% 55%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 220 13% 18%;
+        --input: 220 13% 18%;
+        --ring: 222 100% 60%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply text-foreground;
+    }
+}
+
+/* Custom utilities */
+.label-eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.glass {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.tile-press {
+    transition: transform 100ms ease, box-shadow 200ms ease, border-color 150ms ease;
+}
+.tile-press:active {
+    transform: scale(0.97);
+}
+
+.scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+.pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.tab-grid-divider {
+    background-image: linear-gradient(to right, transparent calc(100% - 1px), #E5E7EB calc(100% - 1px));
+}
+
+/* Visitor badge — print only the badge */
+@media print {
+    body * { visibility: hidden !important; }
+    .print-badge, .print-badge * { visibility: visible !important; }
+    .print-badge {
+        position: fixed !important;
+        left: 50% !important; top: 30px !important;
+        transform: translateX(-50%) !important;
+        box-shadow: none !important;
+    }
+    @page { size: A6; margin: 10mm; }
+}

@@ -1,0 +1,48 @@
+{
+  "summary": "Iteration 2 E2E testing of Smart Workplace. Backend pytest: 47/47 PASS (added 22 new tests for PIN re-check on POST /api/requests, status-transition validation incl. admin bypass, dept-scoped analytics for non-admins, Department PATCH, Visitors CRUD + status transitions, Menu public+CRUD+toggle, Preorders with PIN + status pipeline, IoT command with PIN + listing, Settings GET/PATCH admin-only + persistence). Frontend Playwright: Kiosk /room/123456 renders 3 mode tabs (Request, Order Food, Room Controls) with language & theme toggles; /room/123456/order shows seeded menu items grouped by category with Add-to-cart and 8 add buttons; /room/123456/controls shows 4 device cards (AC, Lights, Projector, Blinds) with on/off/up/down/dim/bright/cool/warm sub-actions and a 'Recent Commands' panel; admin login -> dashboard works with Bearer auth; /admin/departments lists all 6 seeded depts + TEST dept with Edit buttons; /admin/menu renders; /admin/settings shows Slack/Teams/WhatsApp/Email cards with persisted webhook URLs from backend test; /visitors lists TEST visitor with CHECKED OUT status and Check-in Visitor CTA; /orders lists the DELIVERED preorder created by backend test. PWA manifest.json (200) and service-worker.js (200) served at root.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PATCH /api/preorders/{oid}/status", "issue": "status passed as query param instead of JSON body - inconsistent with PATCH /api/requests/{id}/status and PATCH /api/visitors/{vid}/status which use JSON body. Works but breaks REST convention."},
+      {"endpoint": "PATCH /api/preorders/{oid}/status", "issue": "No status-transition validation (any status -> any status allowed); also missing 404 when preorder id doesn't exist (silently no-ops update_one)."},
+      {"endpoint": "POST /api/visitors", "issue": "Endpoint is fully public with no rate-limiting or captcha - similar concern as POST /api/requests pre-fix. Consider requiring a reception-desk token or host-room PIN."},
+      {"endpoint": "GET /api/menu", "issue": "Public endpoint exposes 'available: false' items as well; kiosk /room/{pin}/order should likely receive only available=true items (frontend currently does not appear to filter)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "AppShell dashboard", "issues": ["Theme toggle button on dashboard is missing data-testid='theme-toggle' (kiosk has it but AppShell does not), making automated testing of dark-mode toggle harder."]},
+      {"screen": "Kiosk /room/{pin}/order", "issues": ["Clicking 'Add' button increments cart but the cart sidebar badge sometimes did not visually reflect '1 item' on the first add in automated test (could be a state timing issue worth checking)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_smart_workplace.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Recommended) Change PATCH /api/preorders/{oid}/status to accept JSON body { status } like the other status endpoints, and add validation + 404 handling.",
+    "(Recommended) Add allowed status-transition map for preorders (pending->preparing->out_for_delivery->delivered, plus cancelled).",
+    "(Optional) Add data-testid='theme-toggle' on the AppShell theme button to mirror the Kiosk implementation.",
+    "(Optional) Filter GET /api/menu publicly to available=true (or add ?available_only=true query) so kiosk order page never shows disabled items."
+  ],
+  "critical_code_review_comments": [
+    "server.py is now 1210 lines - past the >700 line guideline. Split into routers/auth.py, routers/rooms.py, routers/requests.py, routers/visitors.py, routers/menu_preorders.py, routers/iot.py, routers/settings.py, models.py, seed.py.",
+    "STATUS_TRANSITIONS check uses 'if status not in allowed AND user not admin' - correct gating, but the second check 'status not in STATUS_TRANSITIONS' is unreachable because RequestStatusUpdate.status is already Literal-restricted; dead code.",
+    "Notification dispatch_notification swallows ALL httpx errors silently with logger.warning - good for resilience, but consider surfacing failures via a failed_dispatches collection so admins know when integrations break in production.",
+    "WhatsApp token is masked in GET /api/settings response (good), but slack_webhook_url and teams_webhook_url contain secrets and are returned unmasked - consider masking those too.",
+    "PWA service-worker.js is served from /service-worker.js (200) but no cache invalidation strategy / version stamp is visible - on next deploy clients may keep old assets indefinitely.",
+    "Public POST /api/preorders and /api/iot/command rely on a single static PIN that doesn't expire - a stolen PIN allows unlimited spam. Consider rate-limiting per room or rotating PINs after N failed attempts."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_smart_workplace.py (added 22 new pytest cases for iteration 2 features and added pin to existing POST /api/requests tests)"
+  ],
+  "success_rate": {"backend": "100% (47/47)", "frontend": "100% (kiosk 3 modes, order, controls, admin pages, visitors, orders, settings, dark mode, PWA all verified)"},
+  "test_credentials": "admin@workplace.com / admin123 (super_admin); reception@workplace.com / demo123; cafeteria@workplace.com / demo123; it@workplace.com / demo123; facilities@workplace.com / demo123; security@workplace.com / demo123; Room PIN 123456 (CEO Cabin).",
+  "seed_data_creation": "Backend seed seeds 6 departments, 24 categories, 5 rooms, 6 users, 8 menu items, 1 global settings doc. Tests created TEST_ prefixed categories, rooms, departments, menu items, visitor, preorder, request - left in DB and visible in frontend admin pages (acceptable, idempotent).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iteration-2 backend + frontend flows verified end-to-end. Run regression: pytest /app/backend/tests/test_smart_workplace.py -v (47 tests, ~10s). New iteration-2 test classes: TestStatusTransitionValidation, TestAnalyticsScoping, TestDepartmentPatch, TestVisitors, TestMenu, TestPreorders, TestIoT, TestSettings. Note PATCH /api/preorders/{oid}/status uses status as QUERY param (?status=preparing), not JSON body - tests use requests.patch(..., params={'status': s}). Public endpoints requiring PIN: POST /api/requests, POST /api/preorders, POST /api/iot/command. Public no-PIN: POST /api/visitors, GET /api/menu, POST /api/rooms/access. Frontend AppShell theme toggle does NOT have data-testid='theme-toggle' (only Kiosk does).",
+  "rca of the issue": "No bugs blocking the iteration. Minor design recommendations only - see action_items."
+}

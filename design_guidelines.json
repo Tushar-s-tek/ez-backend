@@ -1,0 +1,158 @@
+{
+  "project_name": "Smart Workplace Assistance",
+  "theme": "light",
+  "archetype": "Archetype 4: Swiss & High-Contrast",
+  "rationale": "Enterprise-grade operational software demands authority, speed, and extreme clarity. The Swiss archetype relies on stark white backgrounds, crisp 1px borders, and high-impact functional colors (Red/Blue/Green) rather than decorative gradients. For a tablet kiosk used by executives and staff, choices must be legible in under 2 seconds. For the dashboard, data density and rapid scanning are prioritized.",
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "IBM Plex Sans",
+    "mono_font": "JetBrains Mono",
+    "rules": {
+      "h1": "text-4xl md:text-5xl lg:text-6xl tracking-tight font-bold text-gray-900",
+      "h2": "text-2xl md:text-3xl tracking-tight font-semibold text-gray-900",
+      "h3": "text-xl md:text-2xl font-medium text-gray-800",
+      "body": "text-base leading-relaxed text-gray-700",
+      "labels": "text-xs uppercase tracking-[0.2em] font-semibold text-gray-500",
+      "timers": "font-mono text-lg font-medium"
+    }
+  },
+  "colors": {
+    "background": {
+      "primary": "#FFFFFF",
+      "secondary": "#F8F9FA",
+      "overlay": "rgba(0,0,0,0.4)"
+    },
+    "text": {
+      "primary": "#0A0A0A",
+      "secondary": "#52525B",
+      "inverse": "#FFFFFF",
+      "muted": "#A1A1AA"
+    },
+    "brand": {
+      "primary": "#0055FF",
+      "primary_hover": "#0044CC"
+    },
+    "functional": {
+      "success": "#00B368",
+      "success_bg": "#E6F7F0",
+      "warning": "#F5A623",
+      "warning_bg": "#FEF6E9",
+      "danger": "#E53935",
+      "danger_bg": "#FCEBEA",
+      "info": "#0055FF",
+      "info_bg": "#E5EEFF"
+    },
+    "surfaces": {
+      "border": "#E5E7EB",
+      "border_focus": "#0055FF",
+      "glass": "bg-white/80 backdrop-blur-xl border border-white/20 shadow-sm"
+    }
+  },
+  "layout_and_spacing": {
+    "kiosk_interface": {
+      "grid": "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8",
+      "padding": "p-8 md:p-12",
+      "touch_targets": "min-h-[160px] w-full"
+    },
+    "dashboard_interface": {
+      "grid": "grid-cols-1 md:grid-cols-12 gap-4 md:gap-6",
+      "sidebar": "col-span-1 md:col-span-2",
+      "main_content": "col-span-1 md:col-span-10",
+      "padding": "p-6"
+    },
+    "general": {
+      "border_radius": "rounded-lg",
+      "optical_alignment": "Pad icons heavily to align optically with text centers."
+    }
+  },
+  "components": {
+    "kiosk_request_button": {
+      "style": "flex flex-col items-center justify-center gap-4 p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-blue-500 hover:shadow-md transition-all",
+      "icon_size": "w-12 h-12 text-gray-700",
+      "text": "text-xl font-semibold text-gray-900"
+    },
+    "dashboard_card": {
+      "style": "bg-white border border-gray-200 rounded-lg p-6 shadow-sm flex flex-col gap-2"
+    },
+    "status_badge": {
+      "style": "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wider"
+    },
+    "forms_and_inputs": {
+      "style": "Shadcn default inputs, override rounded-md to match global border-radius. Focus rings MUST use #0055FF with high contrast."
+    }
+  },
+  "motion": {
+    "kiosk_tap": "active:scale-95 transition-transform duration-100",
+    "dashboard_hover": "hover:-translate-y-0.5 hover:shadow-md transition-all duration-200",
+    "page_transition": "animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out"
+  },
+  "icons": {
+    "library": "@phosphor-icons/react",
+    "instructions": "Use Duotone weight for massive Kiosk buttons to add premium feel without complexity. Use Regular or Bold weight for dashboard navigation and utility icons.",
+    "installation": "yarn add @phosphor-icons/react"
+  },
+  "media": {
+    "login_background": {
+      "url": "https://images.unsplash.com/photo-1497366811353-6870744d04b2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBvZmZpY2UlMjBhcmNoaXRlY3R1cmUlMjBpbnRlcmlvcnxlbnwwfHx8fDE3Nzg4NDU0MDJ8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Modern office architecture interior to be used as a high-end subtle background for the staff login screen."
+    },
+    "avatars": [
+      {
+        "url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3ODc3NjU5OXww&ixlib=rb-4.1.0&q=85",
+        "description": "Female staff avatar"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3ODc3NjU5OXww&ixlib=rb-4.1.0&q=85",
+        "description": "Male staff avatar"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3ODc3NjU5OXww&ixlib=rb-4.1.0&q=85",
+        "description": "Male staff avatar 2"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1607503873903-c5e95f80d7b9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3ODc3NjU5OXww&ixlib=rb-4.1.0&q=85",
+        "description": "Female staff avatar 2"
+      }
+    ]
+  },
+  "view_specifications": {
+    "login_page": {
+      "layout": "Split screen or centered glass card over image. Use 'login_background' for the visual half or background.",
+      "kiosk_entry": "Prominent PIN/QR entry for meeting rooms.",
+      "staff_entry": "Standard Email/Password JWT login."
+    },
+    "kiosk_tablet_interface": {
+      "header": "Room Name (Large H1), Current Time, 'How can we help you?' text.",
+      "body": "Bento Grid of large categorical buttons (Beverages, IT Support, Cleaning, AC Control). Use Phosphor Duotone icons.",
+      "confirmation_modal": "Full-screen or large centered modal with large green CheckCircle, expected ETA, and 'Close' button."
+    },
+    "staff_dashboard": {
+      "sidebar": "Dark or highly contrasted light sidebar. Navigation items: Live Queue, Rooms, Analytics, Settings.",
+      "live_queue": "Kanban style or dense data table showing active requests. Items must show: Room, Request Type, Time Elapsed (Mono font), Status (Badge).",
+      "timers": "Color code elapsed time (Green < 5m, Yellow 5-15m, Red > 15m)."
+    },
+    "admin_panel": {
+      "content": "Settings for Rooms (Generate QR), Routing logic, Staff Roles.",
+      "analytics": "Charts using Shadcn Chart components (Recharts). Bar charts for peak hours, Donut for request categories."
+    }
+  },
+  "testing_attributes": {
+    "rules": "All interactive elements MUST have data-testid attributes.",
+    "examples": [
+      "data-testid='kiosk-request-coffee-button'",
+      "data-testid='login-staff-submit'",
+      "data-testid='dashboard-accept-request-button'"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "DO NOT use Inter, Roboto, or standard sans-serifs for headings. Use Outfit for Headings and IBM Plex Sans for body.",
+    "The Tablet Kiosk interface must prioritize MASSIVE touch targets (min 160px height) and high-contrast readable text. Do not make standard web buttons for the kiosk.",
+    "Implement the Swiss & High-Contrast archetype. Do not use gradients for backgrounds. Use solid whites, grays, and 1px borders.",
+    "For the staff dashboard, ensure timers use JetBrains Mono for perfect tabular alignment of numbers.",
+    "Use Phosphor icons. Kiosk gets Duotone style; Dashboard gets Regular.",
+    "Do not use generic placeholders. Use the Unsplash URLs provided in the media section.",
+    "Use standard Shadcn components for Dashboard tables, tabs, and forms, but apply 'rounded-lg' and tight borders.",
+    "All buttons and forms must include data-testid.",
+    "Remember this is a hybrid app: The tablet route (e.g., /room) should hide standard desktop navs and be purely app-like."
+  ]
+}

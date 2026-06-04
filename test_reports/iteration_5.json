@@ -1,0 +1,51 @@
+{
+  "summary": "Iteration 5 multi-location refactor verified. NEW pytest suite /app/backend/tests/test_multi_location.py: 12/12 PASS in 8s covering locations CRUD+RBAC, delete-refuses-when-room-attached, cross-location room scoping, non-super_admin auto-scoping & 403 on foreign location_id, kiosk POST /api/requests inheriting room.location_id (ignoring client value), cross-location room+category 400 safeguard, and cross-location PATCH 403. Frontend verified: Location switcher renders in header (TENANT > Locations nav present), /admin/locations CRUD UI creates a new location and the new option appears in the dropdown, reception user correctly sees read-only chip (no dropdown, no Locations nav), kiosk /room/123456 loads CEO Cabin with Coffee/Tea/Water/Snacks categories. Found and fixed one backend regression: MenuItemCreate model was missing `location_id` field while cafeteria.py tried payload.location_id -> 500 on every menu creation. Added `location_id: Optional[str]=None` to MenuItemCreate and MenuItemUpdate in /app/backend/models.py and verified POST /api/menu now returns 200. Found one CRITICAL frontend integration bug: switching active location via header dropdown does NOT actually filter the /admin/rooms list — TEST_UI_Loc was selected (visible in header) yet /admin/rooms still rendered all 8 HQ rooms (CEO Cabin, Board Room 01, Interview Room 2, Training Hall, HR Discussion Room + 3 admin rooms). Expected: empty list since the freshly-created TEST_UI_Loc has no rooms. The axios interceptor's auto-injection of ?location_id= on /rooms GET is either not running on the AdminRooms page (likely bypassing the shared api instance, or location_holder.getActiveLocationId() returning stale/null at fetch time) or RoomsPage caches the previous response. Backend GET /api/rooms?location_id=<TEST_UI_Loc_id> correctly returns [] (verified via curl) so the bug is purely client-side. Also note: the 9 'failures' in test_smart_workplace.py from iteration 4 are EXPECTED behaviour changes (super_admin must now pass location_id when creating tenant resources per resolve_target_location). Those old tests are stale and need to be updated by main agent to pass `location_id` in their POST bodies.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/menu POST", "issue": "FIXED IN THIS RUN: MenuItemCreate model was missing `location_id` field. cafeteria.py:28 read payload.location_id and raised AttributeError -> 500. Added `location_id: Optional[str]=None` to MenuItemCreate and MenuItemUpdate. Verified 200 after fix."},
+      {"endpoint": "test_smart_workplace.py (iter-4 regressions)", "issue": "9 stale tests (TestCategories.test_create_as_admin, TestRooms.test_create_room_admin, TestRooms.test_regenerate_pin, TestRouting.test_upsert_routing, TestUsers.test_admin_create_user, TestDepartmentPatch.test_patch_dept, TestMenu.test_create_menu_item, TestMenu.test_toggle_available, TestPreorders.test_preorder_status_pipeline) fail with 400 'location_id is required for super_admin creating this resource'. New behaviour is correct per spec; tests need to be updated to pass `location_id` (default HQ id) in POST bodies."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "super_admin location switch -> AdminRooms page", "issue": "CRITICAL: After selecting TEST_UI_Loc in header switcher (header shows TEST_UI_Loc and dropdown closes), /admin/rooms STILL renders all 8 HQ — Default rooms instead of an empty list. Backend GET /api/rooms?location_id=<TEST_UI_Loc_id> correctly returns [] when called directly, so the issue is on the frontend — either the axios interceptor isn't injecting location_id on this page's request, or AdminRooms isn't refetching after location change, or it uses a different fetch path that bypasses lib/api.js. Verify (a) AdminRooms.jsx imports `api` from lib/api.js (not raw axios/fetch), (b) it subscribes to useLocation() and re-fetches on activeLocationId change, (c) location_holder.setActiveLocationId() is invoked synchronously inside LocationSwitcher.onChange so the interceptor sees the new value.", "affected_selectors": ["[data-testid='location-switcher']", "/admin/rooms list"], "priority": "HIGH"}
+    ],
+    "design_issues": [
+      {"screen": "AdminLocations New Location dialog", "issues": ["Radix DialogContent missing aria-describedby / Description prop — emits accessibility warning in console. Add a <DialogDescription> or aria-describedby={undefined}."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_multi_location.py",
+    "/app/test_reports/pytest/iteration_5_multilocation.xml"
+  ],
+  "action_items": [
+    "HIGH: Fix the frontend location-switch -> rooms list integration bug. Inspect /app/frontend/src/pages/AdminRooms.jsx (or RoomsPage) to ensure it uses the shared `api` axios instance from /app/frontend/src/lib/api.js AND re-fetches when useLocation().activeLocationId changes. Suspected root cause: AdminRooms either does not subscribe to LocationContext or caches the rooms list without invalidating on location change.",
+    "MEDIUM: Update the 9 stale tests in test_smart_workplace.py to include location_id in their POST bodies (use the default HQ id fetched via GET /api/locations) so the suite is green end-to-end again. Currently this iteration's failures are 'expected breakages' from the multi-location refactor, not real bugs.",
+    "LOW: Add aria-describedby/<DialogDescription> to AdminLocations 'New Location' dialog to silence Radix accessibility warning."
+  ],
+  "critical_code_review_comments": [
+    "core/scope.py is clean and centralised: scope_filter() and resolve_target_location() both correctly enforce non-super_admin -> auto-scope, super_admin -> override-or-required. Returns 403 on cross-location override (verified live).",
+    "routers/requests.py POST /requests correctly overrides client-supplied location with room.location_id and rejects category-from-other-location with 400 (both verified by tests).",
+    "routers/rooms.py and routers/catalog.py consistently enforce cross-location 403 on PATCH/DELETE for non-super_admin (verified).",
+    "BUG IN models.py (now fixed): MenuItemCreate/MenuItemUpdate were missing location_id while cafeteria.py read it -> 500. Suggest a quick model-vs-router audit for any other field drift.",
+    "seed.py correctly backfills location_id on all 10 tenant collections and ensures super_admin user has location_id=None. Default 'HQ — Default' location is idempotent.",
+    "frontend lib/api.js interceptor LOOKS correct (auto-injects on /rooms GET and POST body) but verified-broken in practice for AdminRooms page — investigate whether AdminRooms uses the api instance or how it reacts to location change.",
+    "LocationSwitcher chip-vs-dropdown split based on role is correct (verified for reception user)."
+  ],
+  "updated_files": [
+    "/app/backend/models.py — added `location_id: Optional[str]=None` to MenuItemCreate and MenuItemUpdate (fixes 500 on POST /api/menu by super_admin)",
+    "/app/backend/tests/test_multi_location.py — NEW: 12 multi-location regression tests"
+  ],
+  "success_rate": {
+    "backend": "100% on new multi-location suite (12/12); 86% on full suite (59/68) — 9 stale iter-4 tests need to be updated to the new location_id-required behaviour",
+    "frontend": "83% (5/6 flows pass; location-switch->rooms-filter is broken)"
+  },
+  "test_credentials": "admin@workplace.com / admin123 (super_admin); reception/cafeteria/it/facilities/security @workplace.com / demo123; CEO Cabin PIN 123456",
+  "seed_data_creation": "All test data is ephemeral and TEST_-prefixed; backend tests self-clean (delete location/room/cat/dept at end of each test). One frontend-test artifact 'TEST_UI_Loc' location may persist if the Playwright delete step did not complete; safe to delete via /admin/locations UI or DELETE /api/locations/{id}.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run `pytest /app/backend/tests/test_multi_location.py -v` (~8s) for the multi-location regression. The 9 failing tests in test_smart_workplace.py are EXPECTED BEHAVIOUR CHANGES from the refactor (super_admin must now pass location_id for tenant resource creation) — they should be updated by main agent, not treated as new regressions. The critical open item is the FRONTEND location-switch -> AdminRooms filter bug: validate by logging in as admin@workplace.com, opening header location dropdown, picking any non-HQ location, then visiting /admin/rooms — currently HQ rooms still appear; expected: only the selected location's rooms. Backend filter is correct (curl GET /api/rooms?location_id=<other>) — issue is purely client-side. AdminRooms.jsx must subscribe to useLocation() and re-fetch on activeLocationId change, OR the interceptor in lib/api.js is not seeing the updated location_holder value at request time.",
+  "rca of the issue": "(1) MenuItemCreate 500: model file (models.py) and router file (cafeteria.py) drifted — router added support for location_id (via resolve_target_location) but the Pydantic model was not updated, so attribute access raised AttributeError at runtime. Fix: added the field to both MenuItemCreate and MenuItemUpdate. (2) Frontend rooms-not-filtering: Likely AdminRooms.jsx does not re-fetch on activeLocationId change OR it uses fetch/raw axios instead of the shared `api` axios instance from lib/api.js (the only one with the location interceptor). Confirmed backend filter works correctly — bug is purely in the React layer's re-fetch / interceptor wiring."
+}

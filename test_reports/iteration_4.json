@@ -1,0 +1,44 @@
+{
+  "summary": "Iteration 4 verified end-to-end. Confirmed the core/ package refactor (db/auth/notify/utils) preserves the iteration-3 import surface — `from core import db, sio, get_current_user, require_admin, dispatch_notification, logger` resolves and the live backend boots cleanly. Pytest 56/56 PASS in 72.8s (51 iteration-3 regressions + 5 NEW TestFailedDispatches cases covering RBAC, 404 on resolve, no-failure-when-empty path, full bogus-slack lifecycle, and bulk clear). The new failed_dispatches collection is correctly populated on bogus webhook URL: end-to-end test created a request, fetched via GET /api/settings/failed-dispatches, validated channel='slack', event='new_request', resolved=false, payload_id matches the request id, _id excluded, error='All connection attempts failed', then PATCH /resolve flipped resolved=true (open list excludes, include_resolved=true includes), DELETE only_resolved=true removed it, DELETE only_resolved=false bulk-wiped both rows. Frontend AdminSettings panel verified live: panel rendered the slack failure with correct text, Mark Resolved removed it from open list, Show resolved toggle re-showed it, Clear Resolved (with window.confirm accepted) cleared. Cleanup: slack_webhook_url restored to '' and failed_dispatches wiped in teardown so the UI is left clean.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "conftest.py cleanup fixture", "issue": "For the `requests` collection it matches only id/room_name/category_name — test rows whose ONLY TEST_ marker is in `note` (e.g. note='TEST_bulk_clear') survive across runs and leak into the Live Queue UI. Saw ≥5 TEST_-noted request cards in /dashboard after a clean pytest run. Add `note` to the requests cleanup fields list, or have backend tests delete their created requests."},
+      {"endpoint": "PATCH /api/settings", "issue": "(carry-over from iteration 3) PATCH still returns unmasked slack_webhook_url/teams_webhook_url/whatsapp_token while GET masks them. Inconsistent — consider returning masked values from PATCH too."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_smart_workplace.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Minor) Add `note` to the requests fields in conftest.py CLEANUP_COLLECTIONS so TEST_-noted request rows are purged across runs (currently leaks ~5 cards into the Live Queue UI per pytest run).",
+    "(Optional carry-over) Mask slack/teams/whatsapp secrets in PATCH /api/settings response to match GET."
+  ],
+  "critical_code_review_comments": [
+    "core package split is clean and minimal: __init__.py only re-exports, db.py owns Motor+Socket.IO+logger, auth.py owns JWT, notify.py owns dispatch + _record_failure + _post_webhook, utils.py owns pin/qr/hash/time. Public import surface preserved (`from core import ...`). No circular imports.",
+    "_record_failure truncates error to 500 chars (good) and wraps insert in try/except logger.warning (good — never breaks the request flow).",
+    "_post_webhook now records BOTH HTTP-error (status>=400) and connection-exception cases — verified live with bogus localhost URL produced 'All connection attempts failed' in the error field.",
+    "GET /api/settings/failed-dispatches sorts by created_at desc and excludes _id — good. limit defaults to 100, no upper bound — consider clamping to e.g. 500 to avoid huge responses if DB grows large.",
+    "PATCH /resolve returns 404 properly via res.matched_count == 0; resolve is idempotent (re-resolving an already-resolved row returns the row, doesn't error) — acceptable.",
+    "Frontend AdminSettings.jsx: failures-clear-btn uses window.confirm() — keeps it simple but not testable headlessly without a dialog handler; toast.success('Cleared') only fires when confirm accepted. data-testids are well-placed (failures-list, failure-{id}, failure-{id}-resolve-btn, failures-toggle-resolved, failures-clear-btn).",
+    "conftest.py: autouse session-scoped fixture purges TEST_/ESC_TEST_/ESC_FRESH_/PYTEST_ docs across 11 collections including failed_dispatches — verified the suite emits '[conftest] post-test cleanup removed: {...}' counts. requests collection cleanup is incomplete (see minor issue above).",
+    "Routers settings.py: still ~62 lines, well-scoped, RBAC enforced via require_admin() on all 4 endpoints. Bulk delete query is correctly `{}` when only_resolved=false (deletes everything)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_smart_workplace.py — appended TestFailedDispatches class with 5 new tests covering RBAC (list_requires_admin), 404 (resolve_404_on_missing_id), happy-path empty-webhooks (no_failure_when_webhooks_empty), full bogus-slack lifecycle (bogus_slack_records_failure_full_cycle), bulk clear (clear_bulk_only_resolved_false_wipes_all). All tests restore slack_webhook_url='' in finally and wipe failed_dispatches in teardown."
+  ],
+  "success_rate": {"backend": "100% (56/56)", "frontend": "100% (Failed dispatches panel: render + mark resolved + show resolved toggle + clear resolved all working)"},
+  "test_credentials": "admin@workplace.com / admin123 (super_admin), reception/cafeteria/it/facilities/security @workplace.com / demo123, CEO Cabin PIN 123456",
+  "seed_data_creation": "No new permanent seed. Tests use ephemeral TEST_-prefixed requests + 1-3 failed_dispatch rows per run; all wiped in finally blocks and by conftest cleanup fixture. Verified post-run failed_dispatches is empty.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "pytest /app/backend/tests/test_smart_workplace.py takes ~73s (35s for fresh-not-escalated + ~30-45s for stale escalation + ~10s for failed-dispatches cycles). The 5 new TestFailedDispatches cases at the END of the file ALWAYS restore slack_webhook_url='' in teardown — if a previous run aborts mid-test, run `curl -X PATCH .../api/settings -d '{\"slack_webhook_url\":\"\"}' -H 'Authorization: Bearer <admin>'` once to recover or any subsequent request creation will keep hitting bogus URL and bloating failed_dispatches. Iteration-4 contract additions vs iteration-3: GET /api/settings/failed-dispatches?include_resolved=bool&limit=N (admin), PATCH /api/settings/failed-dispatches/{id}/resolve (admin, 404 on missing), DELETE /api/settings/failed-dispatches?only_resolved=bool (admin).",
+  "rca of the issue": "No bugs blocking iteration 4. The TEST_-noted request rows leaking into the Live Queue (visible in screenshot) are a conftest scope gap — the requests cleanup matches on room_name/category_name fields, but room_name='CEO Cabin' and category_name='Coffee' don't carry the TEST_ marker; only the user-supplied `note` field does. Fix: add 'note' to CLEANUP_COLLECTIONS['requests'] in conftest.py. Backend behaviour is correct; tests pass; UI cleanliness only."
+}

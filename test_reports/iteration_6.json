@@ -1,0 +1,39 @@
+{
+  "summary": "Iteration 6 — validated AdminUsers filter bar + extra_location_ids picker (new feature). Backend: full pytest suite 77/77 PASS (3:43 baseline 68 + 9 new tests in test_users_filters.py covering create-with-extras, super_admin auto-clear, patch-extras, location/department/role/q filters, sort asc/desc, non-admin scoping). Frontend AdminUsers /admin/users verified end-to-end as super_admin: filter bar renders all 4 controls (Search, Location, Department, Role), search debounces and re-calls GET /api/users?q= correctly (6 -> 1 row for 'reception'), Clear filters restores 6 rows, sort headers toggle asc/desc (email asc 'cafeteria@' first / desc 'security@' first), regional@workplace.com correctly shows primary chip + '+ HQ-Vizag' extra chip. Create-user dialog: Primary Location dropdown ENABLED for super_admin, Extra Locations checkbox list (2 options after picking primary out of 3 total locations) works, submit POSTs extra_location_ids, new row shows primary chip + '+' extra chip. Edit dialog pre-populates the existing extras checkbox state. Delete works (row disappears on next search). REGRESSION FIX VERIFIED: the iteration-5 'AdminRooms doesn't filter on location switch' bug is now resolved — switching header dropdown from HQ-Bengalore -> HQ-Vizag correctly re-fetches and shows only 'Vizag Boardroom' (1 room). All AdminUsers test_ids exist (users-filter-bar, users-search-input, users-filter-location/department/role, users-filter-clear, users-result-count, users-sort-name/email/role/created_at, users-create-btn, user-row-{id}, user-{id}-edit-btn, user-{id}-delete-btn, user-{id}-locations, user-name-input, user-email-input, user-pwd-input, user-role-select, user-dept-select, user-primary-loc-select, user-extras-list, user-extra-{loc_id}, user-submit-btn). No critical issues found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_users_filters.py",
+    "/app/test_reports/pytest/iteration_6_users_filters.xml",
+    "/app/test_reports/pytest/iteration_6_full.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routers/users.py — clean, consistent with scope.py. GET /users supports the full filter set (location_id, department_id, role, q, sort, order). q uses re.escape so user input can't inject regex. _SORTABLE whitelist guards sort field — good.",
+    "routers/users.py POST/PATCH correctly clears location_id+extras when role==super_admin and validates _enforce_admin_scope to prevent privilege escalation (non-super_admin can't grant a user access to a location they themselves can't reach). Cross-location PATCH protected by can_write_at on existing.location_id.",
+    "_validate_extras(): dedup + drops primary from extras — good. Suggest extracting the same helper into core/scope.py to keep one source of truth if locations also expand.",
+    "AdminUsers.jsx — solid: useEffect debounces search (250ms), location chip + extra chips render, super_admin role auto-hides primary/extras section (line 331). Primary loc disabled for non-super_admin (line 338). All interactive elements have data-testid.",
+    "AdminUsers.jsx line 67: 'eslint-disable-next-line' to silence missing deps on load() is acceptable since load is intentionally closure-captured each render; consider useCallback for cleanliness.",
+    "Live Queue initial render briefly showed Vizag rooms while header said HQ-Bengalore — likely a one-off ordering between location_holder hydration and first /requests fetch on page mount. Worth a small check to ensure first fetch waits for activeLocationId hydration."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_users_filters.py — NEW: 9 tests for GET filters + POST/PATCH extras + super_admin auto-clear"
+  ],
+  "success_rate": {
+    "backend": "100% (77/77 pytest including 9 new filter/extras tests)",
+    "frontend": "100% on AdminUsers feature flow (filters, search, sort, create with extras, edit pre-populate, delete) + AdminRooms multi-location isolation regression verified fixed"
+  },
+  "test_credentials": "admin@workplace.com/admin123 (super_admin); reception@workplace.com/demo123; regional@workplace.com (canonical user with extra_location_ids)",
+  "seed_data_creation": "All test data TEST_-prefixed and self-cleaned by conftest.py and per-test teardown. No leftover artifacts.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "AdminUsers feature is complete and verified. The previously-flagged iteration-5 AdminRooms location-switch bug is fixed (switching to HQ-Vizag correctly shows only Vizag rooms). Backend suite is 77/77 green. The 9 stale test_smart_workplace.py tests flagged in iter-4 are no longer failing as of iter-5/6 — main agent fixed those. If retesting multi-location isolation regressions: switch between HQ-Bengalore and HQ-Vizag via header dropdown on /admin/rooms, /admin/categories, /admin/departments, /admin/routing, /admin/menu — each should refetch and show only that location's data. There is a minor first-paint quirk on Live Queue (briefly shows last location's data before re-fetching) — low priority.",
+  "rca of the issue": "N/A — no bugs found this iteration. Feature works end-to-end."
+}

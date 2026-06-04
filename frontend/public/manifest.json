@@ -1,0 +1,12 @@
+{
+  "short_name": "EZ Workplace",
+  "name": "TekWissen — EZ Workplace",
+  "icons": [
+    { "src": "favicon.ico", "sizes": "64x64 32x32 24x24 16x16", "type": "image/x-icon" }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0055FF",
+  "background_color": "#FFFFFF"
+}
