@@ -42,7 +42,8 @@ export default function AdminAnalytics() {
             } catch {}
         }
     };
-    useEffect(() => { load(); /* eslint-disable-next-line */ }, [days, activeLocationId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => { load(); }, [days, activeLocationId]);
 
     const exportCsv = () => {
         // Open in new tab; cookies included automatically

@@ -351,7 +351,7 @@ export default function StaffDashboard() {
             if (p.status === "delivered") s.delivered += 1;
         });
         return s;
-    }, [requests, preorders, tick]);
+    }, [requests, preorders]);
 
     const transition = async (req, next, soundKey) => {
         try {

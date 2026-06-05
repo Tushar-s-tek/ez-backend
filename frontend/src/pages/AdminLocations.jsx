@@ -22,7 +22,8 @@ export default function AdminLocations() {
     const [form, setForm] = useState(EMPTY);
     const [saving, setSaving] = useState(false);
 
-    useEffect(() => { refresh(); /* eslint-disable-next-line */ }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => { refresh(); }, []);
 
     const startCreate = () => {
         setEditing(null);
