@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import { api, API } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -30,7 +30,7 @@ export default function AdminAnalytics() {
     const [view, setView] = useState("current"); // "current" | "compare"
     const [days, setDays] = useState("7");
 
-    const load = async () => {
+    const load = useCallback(async () => {
         try {
             const { data } = await api.get("/analytics/overview", { params: { days: parseInt(days, 10) } });
             setData(data);
@@ -41,9 +41,9 @@ export default function AdminAnalytics() {
                 setCompare(cmp);
             } catch {}
         }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => { load(); }, [days, activeLocationId]);
+    }, [days, isSuperAdmin]);
+
+    useEffect(() => { load(); }, [load, activeLocationId]);
 
     const exportCsv = () => {
         // Open in new tab; cookies included automatically

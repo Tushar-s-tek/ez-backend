@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import { api, formatApiErrorDetail } from "@/lib/api";
 import { useLocation } from "@/lib/location";
@@ -22,8 +22,7 @@ export default function AdminLocations() {
     const [form, setForm] = useState(EMPTY);
     const [saving, setSaving] = useState(false);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => { refresh(); }, []);
+    useEffect(() => { refresh(); }, [refresh]);
 
     const startCreate = () => {
         setEditing(null);
